@@ -1,37 +1,62 @@
-name: Build Flutter Windows App
+name: Build Windows Application
 
 on:
   push:
-    branches: [ "main" ]
+    branches: [ main, master, develop ]
   pull_request:
-    branches: [ "main" ]
+    branches: [ main, master ]
+  release:
+    types: [ published ]
 
 jobs:
   build-windows:
+    name: Build Flutter Windows x64
     runs-on: windows-latest
-
+    
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+    - name: Checkout code
+      uses: actions/checkout@v4
 
-      - name: Install Flutter
-        uses: subosito/flutter-action@v2
-        with:
-          flutter-version: '3.28.0'
-          channel: 'stable'
+    - name: Setup Flutter
+      uses: subosito/flutter-action@v2
+      with:
+        channel: stable
+        cache: true
+        cache-key: "flutter-3.35.7"
+        cache-path: ${{ runner.tool_cache }}/flutter
 
-      - name: Get dependencies
-        run: flutter pub get
+    - name: Show Flutter version
+      run: flutter --version
 
-      - name: Analyze code
-        run: flutter analyze
+    - name: Install dependencies
+      run: flutter pub get
 
-      - name: Build Windows app
-        run: flutter build windows --release
+    - name: Verify Windows desktop support
+      run: flutter config --enable-windows-desktop
 
-      # 关键修改：将 v3 升级为 v4
-      - name: Upload build artifacts
-        uses: actions/upload-artifact@v4  # 这里从 v3 改为 v4
-        with:
-          name: flutter-windows-app
-          path: build/windows/x64/runner/Release/
+    - name: Run Flutter analyzer
+      run: flutter analyze
+
+    - name: Run tests
+      run: flutter test
+
+    - name: Build Windows release
+      run: flutter build windows --release
+
+    - name: List build outputs
+      run: dir build\windows\runner\Release /B
+      working-directory: .
+
+    - name: Upload executable as artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: windows-app-executable
+        path: build/windows/runner/Release/*.exe
+        retention-days: 30
+
+    - name: Upload complete build folder
+      uses: actions/upload-artifact@v4
+      with:
+        name: windows-build-folder
+        path: build/windows/runner/Release/
+        retention-days: 30
