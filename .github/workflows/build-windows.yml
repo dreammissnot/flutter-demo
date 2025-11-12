@@ -1,0 +1,47 @@
+name: Build Flutter Windows App
+
+# 触发条件：推送到 main 分支或 PR 到 main 分支时执行
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  build-windows:
+    # 指定运行环境为 Windows Server（支持 Flutter Windows 构建）
+    runs-on: windows-latest
+
+    steps:
+      # 步骤1：拉取代码仓库
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      # 步骤2：安装 Flutter SDK
+      - name: Install Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          # 指定 Flutter 版本（可选，默认最新稳定版）
+          flutter-version: '3.16.0'
+          # 启用 Windows 桌面支持
+          channel: 'stable'
+
+      # 步骤3：安装项目依赖
+      - name: Get dependencies
+        run: flutter pub get
+
+      # 步骤4：检查代码格式（可选）
+      - name: Analyze code
+        run: flutter analyze
+
+      # 步骤5：构建 Windows 应用（release 模式）
+      - name: Build Windows app
+        run: flutter build windows --release
+
+      # 步骤6：上传构建产物（.exe 及相关文件）
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: flutter-windows-app
+          # 构建产物路径（默认输出到 build/windows/x64/runner/Release）
+          path: build/windows/x64/runner/Release/
