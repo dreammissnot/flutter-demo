@@ -1,0 +1,30 @@
+# 基于 Ubuntu 22.04 镜像（兼容 Windows 交叉编译工具链）
+FROM ubuntu:22.04
+
+# 安装依赖（Flutter + Windows 交叉编译工具）
+RUN apt-get update && apt-get install -y \
+    curl \
+    git \
+    unzip \
+    xz-utils \
+    zip \
+    mingw-w64 \
+    libgtk-3-dev \
+    && rm -rf /var/lib/apt/lists/*
+
+# 安装 Flutter（指定稳定版，与本地版本一致）
+RUN curl -fsSL https://storage.googleapis.com/flutter_infra_release/releases/stable/linux/flutter_linux_3.35.7-stable.tar.xz -o flutter.tar.xz \
+    && tar xf flutter.tar.xz -C /opt/ \
+    && rm flutter.tar.xz
+
+# 配置 Flutter 环境变量
+ENV PATH="/opt/flutter/bin:/opt/flutter/bin/cache/dart-sdk/bin:$PATH"
+
+# 启用 Windows 桌面支持
+RUN flutter config --enable-windows-desktop
+
+# 预热 Flutter 依赖（加速后续构建）
+RUN flutter doctor -v
+
+# 设置工作目录
+WORKDIR /app
